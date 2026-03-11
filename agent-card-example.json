@@ -1,0 +1,17 @@
+{
+  "type": "agent-registration-v1",
+  "metadata": {
+    "name": "Example Agent",
+    "description": "A sample ERC-8004 compatible agent",
+    "url": "https://example.com"
+  },
+  "trust": {
+    "supportedTrust": ["reputation", "crypto-economic"]
+  },
+  "endpoints": [
+    {
+      "name": "agentWallet",
+      "endpoint": "eip155:8453:0x..."
+    }
+  ]
+}

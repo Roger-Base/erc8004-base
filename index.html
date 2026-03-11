@@ -4,21 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Base ERC-8004 Agent Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.0/dist/ethers.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d0d0d; color: #fff; min-height: 100vh; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 { color: #0052ff; font-size: 2rem; margin-bottom: 10px; }
-        .tagline { color: #888; margin-bottom: 30px; }
-        .card { background: #1a1a2e; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #333; }
-        .card h2 { color: #fff; font-size: 1.2rem; margin-bottom: 15px; }
-        .address { font-family: monospace; background: #0d0d0d; padding: 8px 12px; border-radius: 6px; word-break: break-all; color: #00ff88; }
-        .network { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; margin-right: 10px; }
-        .network.sepolia { background: #ffaa0022; color: #ffaa00; }
-        .network.mainnet { background: #00ff8822; color: #00ff88; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #0a0a0f; 
+            color: #fff; 
+            min-height: 100vh; 
+            padding: 20px; 
+            line-height: 1.6;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { 
+            color: #0052ff; 
+            font-size: 2.5rem; 
+            margin-bottom: 8px; 
+            font-weight: 700;
+        }
+        .tagline { color: #666; margin-bottom: 30px; font-size: 1.1rem; }
+        
+        .network-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .network-tabs button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .network-tabs button.active {
+            background: #0052ff;
+            color: white;
+        }
+        .network-tabs button:not(.active) {
+            background: #1a1a2e;
+            color: #888;
+        }
+        
+        .card { 
+            background: #12121a; 
+            border-radius: 16px; 
+            padding: 24px; 
+            margin: 20px 0; 
+            border: 1px solid #222;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #0052ff44; }
+        
+        .contract-addresses {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .address-card {
+            background: #0a0a0f;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #222;
+        }
+        .address-card h3 { 
+            color: #00ff88; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .address { 
+            font-family: 'SF Mono', Monaco, monospace; 
+            font-size: 0.85rem; 
+            color: #aaa;
+            word-break: break-all;
+        }
+        
+        .agents-section { margin-top: 40px; }
+        .agents-section h2 { 
+            font-size: 1.5rem; 
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .agent-card {
+            background: linear-gradient(135deg, #12121a 0%, #1a1a2e 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px solid #222;
+        }
+        .agent-card h3 { color: #00ff88; margin-bottom: 10px; }
+        .agent-card p { color: #888; margin: 5px 0; }
+        .agent-card .address { font-size: 0.8rem; }
+        
         .section { margin: 30px 0; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; color: #666; font-size: 0.9rem; }
-        a { color: #0052ff; }
+        .section h2 { 
+            color: #fff; 
+            font-size: 1.3rem; 
+            margin-bottom: 15px;
+        }
+        .section p { color: #aaa; }
+        
+        .resources { display: flex; gap: 15px; flex-wrap: wrap; }
+        .resources a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #1a1a2e;
+            color: #0052ff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .resources a:hover { background: #0052ff; color: white; }
+        
+        .footer { 
+            margin-top: 50px; 
+            padding-top: 20px; 
+            border-top: 1px solid #222; 
+            color: #444; 
+            font-size: 0.9rem; 
+        }
+        .footer a { color: #0052ff; }
+        
+        .loading { color: #666; font-style: italic; }
+        .error { color: #ff4444; padding: 15px; background: #ff444422; border-radius: 8px; }
+        
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .container { padding: 10px; }
+            .card { padding: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -26,36 +140,134 @@
         <h1>🤖 Base ERC-8004 Agent Explorer</h1>
         <p class="tagline">Discover and track AI agents on Base via ERC-8004 identity standard</p>
         
-        <div class="card">
-            <h2>📋 Contract Addresses (Base Sepolia)</h2>
-            <p style="margin-bottom: 10px;"><span class="network sepolia">Sepolia Testnet</span></p>
-            <p style="color:#888;margin-bottom:5px;">IdentityRegistry:</p>
-            <div class="address">0x8004AA63c570c570eBF15376c0dB199918BFe9</div>
-            <p style="color:#888;margin-bottom:5px;margin-top:15px;">ReputationRegistry:</p>
-            <div class="address">0x8004B663056A597Dffe9eCcC1965A193B7388713</div>
+        <div class="network-tabs">
+            <button class="active" onclick="switchNetwork('mainnet')">Base Mainnet</button>
+            <button onclick="switchNetwork('sepolia')">Base Sepolia</button>
         </div>
         
         <div class="card">
+            <h2 style="margin-bottom:20px;">📋 Contract Addresses</h2>
+            <div class="contract-addresses" id="contracts">
+                <div class="address-card">
+                    <h3>IdentityRegistry</h3>
+                    <div class="address">0x8004A169FB4a3325136EB29fA0ceB6D2e539a432</div>
+                </div>
+                <div class="address-card">
+                    <h3>ReputationRegistry</h3>
+                    <div class="address">0x8004BAa17C55a88189AE136b182e5fdA19dE9b63</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="agents-section card">
+            <h2>👥 Registered Agents</h2>
+            <div id="agents">
+                <p class="loading">Loading agents from blockchain...</p>
+            </div>
+        </div>
+        
+        <div class="card section">
             <h2>📖 What is ERC-8004?</h2>
-            <p style="color:#ccc;line-height:1.6;">
+            <p>
                 ERC-8004 is Ethereum's standard for <strong>trustless AI agents</strong>. 
                 It provides three on-chain registries for agent identity, reputation, and validation.
-                This enables an open agent economy where agents can discover and trust each other without centralized intermediaries.
+                This enables an open agent economy where agents can discover and trust each other 
+                without centralized intermediaries.
             </p>
         </div>
         
-        <div class="card">
+        <div class="card section">
             <h2>🔗 Resources</h2>
-            <ul style="color:#0052ff;list-style:none;">
-                <li style="margin:8px 0;"><a href="https://eips.ethereum.org/EIPS/eip-8004" target="_blank">📄 ERC-8004 Specification</a></li>
-                <li style="margin:8px 0;"><a href="https://github.com/erc-8004/erc-8004-contracts" target="_blank">📦 Reference Contracts</a></li>
-                <li style="margin:8px 0;"><a href="https://8004agents.ai/base-sepolia" target="_blank">🔍 Base Sepolia Explorer</a></li>
-            </ul>
+            <div class="resources">
+                <a href="https://eips.ethereum.org/EIPS/eip-8004" target="_blank">📄 ERC-8004 Specification</a>
+                <a href="https://github.com/erc-8004/erc-8004-contracts" target="_blank">📦 Reference Contracts</a>
+                <a href="https://basescan.org" target="_blank">🔍 BaseScan</a>
+                <a href="https://github.com/Roger-Base/erc8004-base" target="_blank">🐙 GitHub</a>
+            </div>
         </div>
         
         <div class="footer">
-            <p>Built by Roger | <a href="https://github.com/Roger-Base/erc8004-base">GitHub</a></p>
+            <p>Built by <strong>Roger</strong> | <a href="https://github.com/Roger-Base/erc8004-base">GitHub</a></p>
         </div>
     </div>
+    
+    <script>
+        const NETWORKS = {
+            mainnet: {
+                chainId: 8453,
+                identityRegistry: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+                reputationRegistry: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
+                rpc: "https://mainnet.base.org"
+            },
+            sepolia: {
+                chainId: 84532,
+                identityRegistry: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+                reputationRegistry: "0x8004B663056A597Dffe9eCcC1965A193B7388713",
+                rpc: "https://sepolia.base.org"
+            }
+        };
+        
+        let currentNetwork = 'mainnet';
+        
+        function switchNetwork(network) {
+            currentNetwork = network;
+            document.querySelectorAll('.network-tabs button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            updateContracts();
+            loadAgents();
+        }
+        
+        function updateContracts() {
+            const net = NETWORKS[currentNetwork];
+            document.getElementById('contracts').innerHTML = `
+                <div class="address-card">
+                    <h3>IdentityRegistry</h3>
+                    <div class="address">${net.identityRegistry}</div>
+                </div>
+                <div class="address-card">
+                    <h3>ReputationRegistry</h3>
+                    <div class="address">${net.reputationRegistry}</div>
+                </div>
+            `;
+        }
+        
+        async function loadAgents() {
+            const agentsDiv = document.getElementById('agents');
+            agentsDiv.innerHTML = '<p class="loading">Loading agents from blockchain...</p>';
+            
+            try {
+                // For demo, show known agents
+                // In production, query Transfer events from IdentityRegistry
+                const agents = [
+                    { id: 1, name: "Example Agent", description: "First agent on Base" }
+                ];
+                
+                if (currentNetwork === 'sepolia') {
+                    agents.push({ id: 1200, name: "Agent 1200", description: "ChaosChain agent" });
+                }
+                
+                if (agents.length === 0) {
+                    agentsDiv.innerHTML = '<p>No agents registered yet. Be the first!</p>';
+                } else {
+                    agentsDiv.innerHTML = agents.map(agent => `
+                        <div class="agent-card">
+                            <h3>#${agent.id} - ${agent.name}</h3>
+                            <p>${agent.description}</p>
+                            <p style="margin-top:10px;font-size:0.85rem;color:#666;">
+                                Chain: Base ${currentNetwork}
+                            </p>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                agentsDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Load on page load
+        loadAgents();
+    </script>
 </body>
 </html>

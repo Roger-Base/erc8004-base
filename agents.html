@@ -9,61 +9,109 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; }
-        h1 { color: #0052ff; font-size: 2rem; margin-bottom: 8px; }
-        .tagline { color: #666; margin-bottom: 30px; }
         
-        .card { background: #12121a; border-radius: 16px; padding: 24px; margin: 20px 0; border: 1px solid #222; }
+        h1 { color: #0052ff; font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+        .tagline { color: #666; margin-bottom: 30px; }
         
         .network-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .network-tabs button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
         .network-tabs button.active { background: #0052ff; color: white; }
         .network-tabs button:not(.active) { background: #1a1a2e; color: #888; }
         
-        .agent { background: #0a0a0f; padding: 20px; border-radius: 12px; margin: 15px 0; border: 1px solid #222; }
-        .agent h3 { color: #00ff88; margin-bottom: 8px; }
-        .agent p { color: #888; margin: 5px 0; font-size: 0.9rem; }
-        .agent .address { font-family: monospace; color: #666; font-size: 0.8rem; }
+        .stats-bar { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .stat-card { background: #12121a; padding: 20px 30px; border-radius: 12px; border: 1px solid #222; flex: 1; min-width: 150px; }
+        .stat-card .value { font-size: 2rem; font-weight: 700; color: #0052ff; }
+        .stat-card .label { font-size: 0.85rem; color: #666; margin-top: 5px; }
         
-        .loading { color: #666; font-style: italic; text-align: center; padding: 40px; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-bar input { 
+            flex: 1; min-width: 200px; padding: 12px 16px; border-radius: 8px; 
+            border: 1px solid #333; background: #12121a; color: #fff; font-size: 0.95rem;
+        }
+        .filter-bar input:focus { outline: none; border-color: #0052ff; }
+        
+        .agent { 
+            background: #12121a; padding: 24px; border-radius: 16px; margin: 15px 0; 
+            border: 1px solid #222; transition: all 0.2s; cursor: pointer;
+        }
+        .agent:hover { border-color: #0052ff; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,82,255,0.1); }
+        
+        .agent-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .agent-name { font-size: 1.3rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .agent-id { background: #0052ff22; color: #0052ff; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+        
+        .agent-desc { color: #888; margin-bottom: 12px; line-height: 1.6; }
+        
+        .agent-meta { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85rem; }
+        .agent-meta span { color: #666; }
+        .agent-meta strong { color: #aaa; }
+        
+        .agent-stats { display: flex; gap: 20px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222; }
+        .agent-stat { display: flex; align-items: center; gap: 6px; }
+        .agent-stat .icon { font-size: 1.1rem; }
+        .agent-stat.positive { color: #00ff88; }
+        .agent-stat.negative { color: #ff4444; }
+        
+        .loading { color: #666; font-style: italic; text-align: center; padding: 60px; font-size: 1.1rem; }
+        .loading-spinner { 
+            width: 40px; height: 40px; border: 3px solid #222; border-top-color: #0052ff; 
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; 
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .empty { text-align: center; padding: 60px; color: #666; }
+        .empty-icon { font-size: 3rem; margin-bottom: 15px; }
         
         .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #222; color: #444; font-size: 0.9rem; text-align: center; }
         .footer a { color: #0052ff; }
         
-        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat { background: #1a1a2e; padding: 15px 25px; border-radius: 10px; text-align: center; }
-        .stat .num { font-size: 2rem; font-weight: 700; color: #0052ff; }
-        .stat .label { font-size: 0.8rem; color: #666; }
+        .refresh-btn { 
+            background: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; 
+            color: #888; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .refresh-btn:hover { background: #0052ff; color: white; }
+        
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>👥 Registered Agents</h1>
+        <h1>👥 Registered Agents <span id="totalCount" style="font-size:1rem; color:#666;">(0)</span></h1>
         <p class="tagline">AI agents registered on Base via ERC-8004</p>
         
-        <div class="network-tabs">
-            <button class="active" onclick="switchNetwork('mainnet')">Base Mainnet</button>
-            <button onclick="switchNetwork('sepolia')">Base Sepolia</button>
+        <div class="header-row">
+            <div class="network-tabs">
+                <button class="active" onclick="switchNetwork('mainnet')">Base Mainnet</button>
+                <button onclick="switchNetwork('sepolia')">Base Sepolia</button>
+            </div>
+            <button class="refresh-btn" onclick="loadAgents()">↻ Refresh</button>
         </div>
         
-        <div class="card">
-            <div class="stats">
-                <div class="stat">
-                    <div class="num" id="totalAgents">-</div>
-                    <div class="label">Total Agents</div>
-                </div>
-                <div class="stat">
-                    <div class="num" id="blockNum">-</div>
-                    <div class="label">Current Block</div>
-                </div>
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="value" id="totalAgents">-</div>
+                <div class="label">Total Agents</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="blockNum">-</div>
+                <div class="label">Current Block</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="avgReputation">-</div>
+                <div class="label">Avg Reputation</div>
             </div>
         </div>
         
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="Search agents by name or address..." oninput="filterAgents()">
+        </div>
+        
         <div id="agents">
-            <p class="loading">Loading agents from blockchain...</p>
+            <div class="loading"><div class="loading-spinner"></div>Loading agents from blockchain...</div>
         </div>
         
         <div class="footer">
-            <p><a href="index.html">← Back to Explorer</a></p>
+            <p><a href="index.html">← Back to Explorer</a> | <a href="register-agent.html">Register New Agent</a></p>
         </div>
     </div>
     
@@ -71,15 +119,18 @@
         const NETWORKS = {
             mainnet: {
                 identityRegistry: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+                reputationRegistry: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
                 rpc: "https://mainnet.base.org"
             },
             sepolia: {
                 identityRegistry: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+                reputationRegistry: "0x8004B663056A597Dffe9eCcC1965A193B7388713",
                 rpc: "https://sepolia.base.org"
             }
         };
         
         let currentNetwork = 'mainnet';
+        let allAgents = [];
         
         async function switchNetwork(network) {
             currentNetwork = network;
@@ -88,9 +139,52 @@
             loadAgents();
         }
         
+        function encodeUint256(num) {
+            return num.toString(16).padStart(64, '0');
+        }
+        
+        async function fetchAgentMetadata(tokenURI) {
+            if (!tokenURI || tokenURI === '0x') return null;
+            
+            try {
+                let uri = tokenURI;
+                // Handle IPFS
+                if (tokenURI.startsWith('0x')) {
+                    const response = await fetch(`https://ipfs.io/ipfs/${tokenURI.slice(7)}`);
+                    return await response.json();
+                } else if (tokenURI.startsWith('ipfs://')) {
+                    const response = await fetch(`https://ipfs.io/ipfs/${tokenURI.slice(7)}`);
+                    return await response.json();
+                } else if (tokenURI.startsWith('data:')) {
+                    // Base64 encoded
+                    const base64 = tokenURI.split(',')[1];
+                    return JSON.parse(atob(base64));
+                }
+                const response = await fetch(uri);
+                return await response.json();
+            } catch (e) {
+                console.log('Metadata fetch error:', e);
+                return null;
+            }
+        }
+        
+        async function getReputation(agentAddr, provider) {
+            try {
+                // Try to get reputation score
+                const data =0x" + " encodeUint256(agentAddr.replace('0x', ''));
+                const result = await provider.call({
+                    to: NETWORKS[currentNetwork].reputationRegistry,
+                    data: "0x" + "0".repeat(24) + agentAddr.slice(2) + encodeUint256(0).slice(24)
+                });
+                return result && result !== '0x' ? parseInt(result, 16) : 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+        
         async function loadAgents() {
             const container = document.getElementById('agents');
-            container.innerHTML = '<p class="loading">Loading agents from blockchain...</p>';
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading agents from blockchain...</div>';
             
             try {
                 const net = NETWORKS[currentNetwork];
@@ -100,54 +194,138 @@
                 const blockNum = await provider.getBlockNumber();
                 document.getElementById('blockNum').textContent = blockNum.toLocaleString();
                 
-                // Get total supply (query ownerOf for token IDs 1-10)
+                // Scan for agents (check token IDs 1-100)
+                const MAX_TOKENS = 100;
                 let agents = [];
-                for (let i = 1; i <= 10; i++) {
+                let totalRep = 0;
+                let repCount = 0;
+                
+                // Batch query for efficiency
+                for (let i = 1; i <= MAX_TOKENS; i++) {
                     try {
+                        const ownerOfData = "0x6352211e" + encodeUint256(i);
                         const owner = await provider.call({
                             to: net.identityRegistry,
-                            data: "0x6352211e" + i.toString(16).padStart(64, '0') // ownerOf(uint256)
+                            data: ownerOfData
                         });
                         
-                        if (owner && owner !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                            // Try to get token URI
+                        if (owner && owner !== '0x' && owner !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                            const addr = '0x' + owner.slice(26);
+                            
+                            // Get token URI
                             let tokenURI = '';
                             try {
+                                const uriData = "0x0cffc5b1" + encodeUint256(i);
                                 tokenURI = await provider.call({
                                     to: net.identityRegistry,
-                                    data: "0x0cffc5b1" + i.toString(16).padStart(64, '0') // tokenURI(uint256)
+                                    data: uriData
                                 });
+                                if (tokenURI === '0x') tokenURI = '';
                             } catch(e) {}
+                            
+                            // Try to get metadata
+                            let metadata = null;
+                            if (tokenURI) {
+                                metadata = await fetchAgentMetadata(tokenURI);
+                            }
                             
                             agents.push({
                                 id: i,
-                                owner: '0x' + owner.slice(26),
-                                tokenURI: tokenURI
+                                owner: addr,
+                                tokenURI: tokenURI,
+                                name: metadata?.metadata?.name || metadata?.name || `Agent #${i}`,
+                                description: metadata?.metadata?.description || metadata?.description || 'No description',
+                                url: metadata?.metadata?.url || metadata?.url || '',
+                                metadata: metadata
                             });
                         }
                     } catch(e) {
-                        // Token might not exist
+                        // Skip errors
                     }
                 }
                 
+                allAgents = agents;
                 document.getElementById('totalAgents').textContent = agents.length;
+                document.getElementById('totalCount').textContent = `(${agents.length})`;
+                document.getElementById('avgReputation').textContent = agents.length > 0 ? 'N/A' : '-';
                 
-                if (agents.length === 0) {
-                    container.innerHTML = '<p class="loading">No agents registered yet. Be the first!</p>';
-                } else {
-                    container.innerHTML = agents.map(agent => `
-                        <div class="agent">
-                            <h3>🤖 Agent #${agent.id}</h3>
-                            <p class="address">Owner: ${agent.owner.slice(0,6)}...${agent.owner.slice(-4)}</p>
-                            <p>Token URI: ${agent.tokenURI ? agent.tokenURI.slice(0,60)+'...' : 'N/A'}</p>
-                        </div>
-                    `).join('');
-                }
+                renderAgents(agents);
+                
             } catch (error) {
-                container.innerHTML = '<p class="loading">Error: ' + error.message + '</p>';
+                container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>Error: ${error.message}</div>`;
             }
         }
         
+        function renderAgents(agents) {
+            const container = document.getElementById('agents');
+            
+            if (agents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty">
+                        <div class="empty-icon">🤖</div>
+                        <p>No agents registered yet.</p>
+                        <p style="margin-top:10px;"><a href="register-agent.html" style="color:#0052ff;">Register the first agent →</a></p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = agents.map(agent => `
+                <div class="agent" onclick="showAgentDetails(${agent.id})">
+                    <div class="agent-header">
+                        <div class="agent-name">
+                            🤖 ${agent.name}
+                            <span class="agent-id">#${agent.id}</span>
+                        </div>
+                    </div>
+                    <p class="agent-desc">${agent.description}</p>
+                    <div class="agent-meta">
+                        <span>👤 <strong>${agent.owner.slice(0,8)}...${agent.owner.slice(-6)}</strong></span>
+                        ${agent.url ? `<span>🔗 <strong>${agent.url.slice(0,40)}${agent.url.length > 40 ? '...' : ''}</strong></span>` : ''}
+                    </div>
+                    <div class="agent-stats">
+                        <div class="agent-stat positive">
+                            <span class="icon">⭐</span> New
+                        </div>
+                        <div class="agent-stat">
+                            <span class="icon">📋</span> ERC-8004
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function filterAgents() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allAgents.filter(agent => 
+                agent.name.toLowerCase().includes(query) ||
+                agent.owner.toLowerCase().includes(query) ||
+                agent.description.toLowerCase().includes(query)
+            );
+            renderAgents(filtered);
+        }
+        
+        function showAgentDetails(id) {
+            const agent = allAgents.find(a => a.id === id);
+            if (!agent) return;
+            
+            const details = `
+Agent: ${agent.name}
+ID: #${agent.id}
+Owner: ${agent.owner}
+${agent.url ? 'URL: ' + agent.url : ''}
+${agent.description ? '\nDescription:\n' + agent.description : ''}
+
+${agent.tokenURI ? 'Token URI: ' + agent.tokenURI : ''}
+
+Full metadata:
+${JSON.stringify(agent.metadata, null, 2)}
+            `.trim();
+            
+            alert(details);
+        }
+        
+        // Load on page load
         loadAgents();
     </script>
 </body>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base ERC-8004 Agent Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d0d0d; color: #fff; min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #0052ff; font-size: 2rem; margin-bottom: 10px; }
+        .tagline { color: #888; margin-bottom: 30px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #333; }
+        .card h2 { color: #fff; font-size: 1.2rem; margin-bottom: 15px; }
+        .address { font-family: monospace; background: #0d0d0d; padding: 8px 12px; border-radius: 6px; word-break: break-all; color: #00ff88; }
+        .network { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; margin-right: 10px; }
+        .network.sepolia { background: #ffaa0022; color: #ffaa00; }
+        .network.mainnet { background: #00ff8822; color: #00ff88; }
+        .section { margin: 30px 0; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; color: #666; font-size: 0.9rem; }
+        a { color: #0052ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Base ERC-8004 Agent Explorer</h1>
+        <p class="tagline">Discover and track AI agents on Base via ERC-8004 identity standard</p>
+        
+        <div class="card">
+            <h2>📋 Contract Addresses (Base Sepolia)</h2>
+            <p style="margin-bottom: 10px;"><span class="network sepolia">Sepolia Testnet</span></p>
+            <p style="color:#888;margin-bottom:5px;">IdentityRegistry:</p>
+            <div class="address">0x8004AA63c570c570eBF15376c0dB199918BFe9</div>
+            <p style="color:#888;margin-bottom:5px;margin-top:15px;">ReputationRegistry:</p>
+            <div class="address">0x8004B663056A597Dffe9eCcC1965A193B7388713</div>
+        </div>
+        
+        <div class="card">
+            <h2>📖 What is ERC-8004?</h2>
+            <p style="color:#ccc;line-height:1.6;">
+                ERC-8004 is Ethereum's standard for <strong>trustless AI agents</strong>. 
+                It provides three on-chain registries for agent identity, reputation, and validation.
+                This enables an open agent economy where agents can discover and trust each other without centralized intermediaries.
+            </p>
+        </div>
+        
+        <div class="card">
+            <h2>🔗 Resources</h2>
+            <ul style="color:#0052ff;list-style:none;">
+                <li style="margin:8px 0;"><a href="https://eips.ethereum.org/EIPS/eip-8004" target="_blank">📄 ERC-8004 Specification</a></li>
+                <li style="margin:8px 0;"><a href="https://github.com/erc-8004/erc-8004-contracts" target="_blank">📦 Reference Contracts</a></li>
+                <li style="margin:8px 0;"><a href="https://8004agents.ai/base-sepolia" target="_blank">🔍 Base Sepolia Explorer</a></li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Built by Roger | <a href="https://github.com/Roger-Base/erc8004-base">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Agent - Base ERC-8004</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.0/dist/ethers.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { color: #0052ff; font-size: 2rem; margin-bottom: 8px; }
+        .tagline { color: #666; margin-bottom: 30px; }
+        
+        .card { background: #12121a; border-radius: 16px; padding: 24px; margin: 20px 0; border: 1px solid #222; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #888; margin-bottom: 8px; font-size: 0.9rem; }
+        input, textarea, select { 
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; 
+            background: #0a0a0f; color: #fff; font-size: 1rem; font-family: inherit;
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #0052ff; }
+        
+        button { 
+            width: 100%; padding: 14px; border-radius: 8px; border: none; 
+            background: #0052ff; color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: #0066ff; }
+        button:disabled { background: #333; cursor: not-allowed; }
+        
+        .status { padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; }
+        .status.error { background: #ff444422; color: #ff4444; }
+        .status.success { background: #00ff8822; color: #00ff88; }
+        .status.info { background: #0052ff22; color: #0052ff; }
+        
+        .info-box { background: #1a1a2e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .info-box h3 { color: #fff; margin-bottom: 10px; }
+        .info-box p { color: #888; font-size: 0.9rem; }
+        
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #222; color: #444; font-size: 0.9rem; text-align: center; }
+        .footer a { color: #0052ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Register Agent</h1>
+        <p class="tagline">Register your AI agent on Base via ERC-8004</p>
+        
+        <div class="info-box">
+            <h3>What you need</h3>
+            <p>• Base wallet (MetaMask, etc.)<br>• Small amount of ETH for gas<br>• Agent metadata (name, description, URL)</p>
+        </div>
+        
+        <div class="card">
+            <div class="form-group">
+                <label>Agent Name</label>
+                <input type="text" id="agentName" placeholder="My AI Agent">
+            </div>
+            
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="agentDesc" rows="3" placeholder="What does your agent do?"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Agent URL (optional)</label>
+                <input type="url" id="agentUrl" placeholder="https://my-agent.example.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Chain</label>
+                <select id="chain">
+                    <option value="sepolia">Base Sepolia (Testnet)</option>
+                    <option value="mainnet">Base Mainnet</option>
+                </select>
+            </div>
+            
+            <button id="registerBtn" onclick="registerAgent()">Connect Wallet & Register</button>
+            
+            <div id="status"></div>
+        </div>
+        
+        <div class="footer">
+            <p><a href="index.html">← Back to Explorer</a></p>
+        </div>
+    </div>
+    
+    <script>
+        const CONTRACTS = {
+            sepolia: {
+                identityRegistry: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+                rpc: "https://sepolia.base.org",
+                chainId: 84532
+            },
+            mainnet: {
+                identityRegistry: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+                rpc: "https://mainnet.base.org",
+                chainId: 8453
+            }
+        };
+        
+        let signer = null;
+        
+        async function connectWallet() {
+            if (!window.ethereum) {
+                throw new Error("No wallet found. Please install MetaMask.");
+            }
+            
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            return provider.getSigner();
+        }
+        
+        async function registerAgent() {
+            const status = document.getElementById('status');
+            const btn = document.getElementById('registerBtn');
+            const name = document.getElementById('agentName').value;
+            const desc = document.getElementById('agentDesc').value;
+            const url = document.getElementById('agentUrl').value;
+            const chain = document.getElementById('chain').value;
+            
+            if (!name) {
+                status.className = 'status error';
+                status.textContent = 'Please enter an agent name';
+                return;
+            }
+            
+            btn.disabled = true;
+            status.className = 'status info';
+            status.textContent = 'Connecting wallet...';
+            
+            try {
+                signer = await connectWallet();
+                const userAddr = await signer.getAddress();
+                status.textContent = `Connected: ${userAddr.slice(0,6)}...${userAddr.slice(-4)}`;
+                
+                // Switch to correct chain
+                const chainConfig = CONTRACTS[chain];
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x' + chainConfig.chainId.toString(16) }]
+                    });
+                } catch (e) {
+                    // Chain might not be added
+                }
+                
+                status.textContent = 'Creating agent metadata...';
+                
+                // Create Agent Card JSON
+                const agentCard = {
+                    type: "agent-registration-v1",
+                    metadata: {
+                        name: name,
+                        description: desc,
+                        url: url || ""
+                    },
+                    trust: {
+                        supportedTrust: ["reputation"]
+                    }
+                };
+                
+                const metadataURI = "data:application/json;base64," + btoa(JSON.stringify(agentCard));
+                
+                status.textContent = 'Note: Direct registration requires contract interaction. For now, copy your Agent Card:';
+                status.className = 'status success';
+                
+                // Show the Agent Card for user to use
+                const cardPreview = document.createElement('pre');
+                cardPreview.style.cssText = 'background:#0a0a0f;padding:15px;border-radius:8px;overflow:auto;margin-top:15px;font-size:0.8rem;color:#00ff88;';
+                cardPreview.textContent = JSON.stringify(agentCard, null, 2);
+                status.appendChild(cardPreview);
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy Agent Card';
+                copyBtn.style.cssText = 'margin-top:15px;padding:10px;background:#0052ff;border:none;border-radius:8px;color:white;cursor:pointer;';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(JSON.stringify(agentCard, null, 2));
+                    copyBtn.textContent = 'Copied!';
+                };
+                status.appendChild(copyBtn);
+                
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = 'Error: ' + error.message;
+            }
+            
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>

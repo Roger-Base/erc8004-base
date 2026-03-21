@@ -104,6 +104,8 @@
         
         <div class="filter-bar">
             <input type="text" id="searchInput" placeholder="Search agents by name or address..." oninput="filterAgents()">
+            <input type="number" id="idInput" placeholder="Agent ID" min="1" style="width:120px">
+            <button onclick="lookupAgentById()" style="padding:12px 20px;background:#0052ff;border:none;border-radius:8px;color:white;cursor:pointer;font-weight:600;">Lookup</button>
         </div>
         
         <div id="agents">
@@ -179,6 +181,75 @@
                 return result && result !== '0x' ? parseInt(result, 16) : 0;
             } catch (e) {
                 return 0;
+            }
+        }
+        
+        async function lookupAgentById() {
+            const idInput = document.getElementById('idInput');
+            const agentId = parseInt(idInput.value);
+            if (!agentId || agentId < 1) {
+                alert('Please enter a valid agent ID');
+                return;
+            }
+            
+            const container = document.getElementById('agents');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Looking up agent ' + agentId + '...</div>';
+            
+            try {
+                const net = NETWORKS[currentNetwork];
+                const provider = new ethers.JsonRpcProvider(net.rpc);
+                
+                // Get owner
+                const ownerOfData = "0x6352211e" + encodeUint256(agentId);
+                const owner = await provider.call({
+                    to: net.identityRegistry,
+                    data: ownerOfData
+                });
+                
+                if (!owner || owner === '0x' || owner === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    container.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>Agent ' + agentId + ' not found on ' + currentNetwork + '</div>';
+                    return;
+                }
+                
+                const addr = '0x' + owner.slice(26);
+                
+                // Get token URI
+                let tokenURI = '';
+                try {
+                    const uriData = "0x0cffc5b1" + encodeUint256(agentId);
+                    tokenURI = await provider.call({
+                        to: net.identityRegistry,
+                        data: uriData
+                    });
+                    if (tokenURI && tokenURI !== '0x') {
+                        tokenURI = '0x' + tokenURI.slice(130);
+                        // Remove padding
+                        const hexLen = parseInt(tokenURI.slice(0, 64), 16);
+                        tokenURI = hexLen > 0 ? tokenURI.slice(64, 64 + hexLen * 2) : '';
+                    }
+                } catch (e) {}
+                
+                // Fetch metadata
+                let metadata = null;
+                if (tokenURI) {
+                    metadata = await fetchAgentMetadata(tokenURI);
+                }
+                
+                const agent = {
+                    id: agentId,
+                    name: metadata?.name || 'Agent ' + agentId,
+                    owner: addr,
+                    description: metadata?.description || '',
+                    uri: tokenURI,
+                    chain: currentNetwork === 'mainnet' ? 'Base Mainnet' : 'Base Sepolia'
+                };
+                
+                // Show the agent
+                renderAgents([agent]);
+                document.getElementById('totalCount').textContent = '(1)';
+                
+            } catch (err) {
+                container.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Error: ' + err.message.slice(0, 100) + '</div>';
             }
         }
         

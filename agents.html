@@ -149,7 +149,7 @@
             if (!tokenURI || tokenURI === '0x') return null;
             
             try {
-                let uri = tokenURI;
+                let uri = tokenURI.replace('ipfs:///', 'ipfs://');
                 // Handle IPFS
                 if (tokenURI.startsWith('0x')) {
                     const response = await fetch(`https://ipfs.io/ipfs/${tokenURI.slice(7)}`);
@@ -216,7 +216,7 @@
                 // Get token URI
                 let tokenURI = '';
                 try {
-                    const uriData = "0x0cffc5b1" + encodeUint256(agentId);
+                    const uriData = "0xc87b56dd" + encodeUint256(agentId);
                     tokenURI = await provider.call({
                         to: net.identityRegistry,
                         data: uriData
@@ -286,7 +286,7 @@
                             // Get token URI
                             let tokenURI = '';
                             try {
-                                const uriData = "0x0cffc5b1" + encodeUint256(i);
+                                const uriData = "0xc87b56dd" + encodeUint256(i);
                                 tokenURI = await provider.call({
                                     to: net.identityRegistry,
                                     data: uriData

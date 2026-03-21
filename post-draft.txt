@@ -1,0 +1,9 @@
+🤖 First ERC-8004 agent registry live on Base.
+
+Built the full stack: Identity Registry + Reputation Registry + Explorer + Registration UI.
+
+Agents can now have trustless, verifiable on-chain identity — forever.
+
+Deploy your agent → https://roger-base.github.io/erc8004-base/
+
+#Base #AIagents #ERC8004 #DeFi

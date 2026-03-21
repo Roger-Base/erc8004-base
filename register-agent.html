@@ -164,19 +164,41 @@
                 
                 const metadataURI = "data:application/json;base64," + btoa(JSON.stringify(agentCard));
                 
-                status.textContent = 'Note: Direct registration requires contract interaction. For now, copy your Agent Card:';
-                status.className = 'status success';
+                status.textContent = 'Submitting to blockchain...';
+                status.className = 'status info';
                 
-                // Show the Agent Card for user to use
-                const cardPreview = document.createElement('pre');
-                cardPreview.style.cssText = 'background:#0a0a0f;padding:15px;border-radius:8px;overflow:auto;margin-top:15px;font-size:0.8rem;color:#00ff88;';
-                cardPreview.textContent = JSON.stringify(agentCard, null, 2);
-                status.appendChild(cardPreview);
-                
-                const copyBtn = document.createElement('button');
-                copyBtn.textContent = 'Copy Agent Card';
-                copyBtn.style.cssText = 'margin-top:15px;padding:10px;background:#0052ff;border:none;border-radius:8px;color:white;cursor:pointer;';
-                copyBtn.onclick = () => {
+                try {
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const contract = new ethers.Contract(
+                        chainConfig.identityRegistry,
+                        [
+                            "function register(string agentURI) payable",
+                            "function getTotalAgents() view returns (uint256)"
+                        ],
+                        signer
+                    );
+                    
+                    status.textContent = 'Confirm transaction in MetaMask...';
+                    
+                    const tx = await contract.register(metadataURI, { gasLimit: 500000 });
+                    status.textContent = `Transaction submitted: ${tx.hash.slice(0,10)}...`;
+                    
+                    const receipt = await tx.wait();
+                    const agentId = receipt.logs[0]?.args?.tokenId || receipt.logs[0]?.args?.agentId || 'unknown';
+                    
+                    status.className = 'status success';
+                    status.textContent = `✅ Agent registered! Token ID: ${agentId}`;
+                    
+                    // Show agent card
+                    const cardPreview = document.createElement('pre');
+                    cardPreview.style.cssText = 'background:#0a0a0f;padding:15px;border-radius:8px;overflow:auto;margin-top:15px;font-size:0.8rem;color:#00ff88;';
+                    cardPreview.textContent = JSON.stringify(agentCard, null, 2);
+                    status.appendChild(cardPreview);
+                    
+                } catch (err) {
+                    status.className = 'status error';
+                    status.textContent = 'Registration failed: ' + err.message.slice(0, 100);
+                }
                     navigator.clipboard.writeText(JSON.stringify(agentCard, null, 2));
                     copyBtn.textContent = 'Copied!';
                 };

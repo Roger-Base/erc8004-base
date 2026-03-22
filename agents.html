@@ -221,12 +221,8 @@
                         to: net.identityRegistry,
                         data: uriData
                     });
-                    if (tokenURI && tokenURI !== '0x') {
-                        tokenURI = '0x' + tokenURI.slice(130);
-                        // Remove padding
-                        const hexLen = parseInt(tokenURI.slice(0, 64), 16);
-                        tokenURI = hexLen > 0 ? tokenURI.slice(64, 64 + hexLen * 2) : '';
-                    }
+                    // ethers.js v6 auto-decodes string returns — tokenURI is already the string
+                    if (!tokenURI || tokenURI === '0x') tokenURI = '';
                 } catch (e) {}
                 
                 // Fetch metadata

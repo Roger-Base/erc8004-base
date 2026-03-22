@@ -34,14 +34,55 @@ async function callContract(to, data) {
     return await jsonRpcCall('eth_call', [{ to, data }, 'latest']);
 }
 
-function decodeString(raw) {
-    if (!raw || raw === '0x' || raw.length < 130) return null;
+function parseTokenURI(raw) {
+    // ethers.js v6 returns the decoded string directly
+    // If it looks like a data URL or IPFS, return it
+    // If it's still hex-encoded, decode it
+    if (!raw || raw === '0x') return null;
+    if (raw.startsWith('0x')) {
+        // Check if it's a bytes string (offset + length prefix in hex)
+        if (raw.length > 130) {
+            try {
+                const uriHex = raw.slice(66);
+                const uriLen = parseInt(raw.slice(66, 130), 16);
+                if (uriLen > 0 && uriLen < 2000) {
+                    const str = uriHex.slice(0, uriLen * 2);
+                    return Buffer.from(str, 'hex').toString('utf8');
+                }
+            } catch {}
+        }
+        // Maybe it's a raw hex string (no length prefix)
+        try {
+            const hex = raw.slice(2);
+            if (hex.length % 2 === 0) {
+                const decoded = Buffer.from(hex, 'hex').toString('utf8');
+                if (decoded.startsWith('data:') || decoded.startsWith('ipfs://') || decoded.startsWith('https://')) {
+                    return decoded;
+                }
+            }
+        } catch {}
+        return null;
+    }
+    return raw; // Already decoded by ethers.js v6
+}
+
+function decodeMetadata(tokenURI) {
+    if (!tokenURI) return null;
     try {
-        const uriHex = raw.slice(66); // drop offset(32) + length(32)
-        const uriLen = parseInt(raw.slice(66, 130), 16);
-        if (uriLen > 0 && uriLen < 512) {
-            const str = uriHex.slice(0, uriLen * 2);
-            return Buffer.from(str, 'hex').toString('utf8');
+        // Handle data:application/json;base64,... URIs
+        if (tokenURI.startsWith('data:application/json;base64,')) {
+            const b64 = tokenURI.split(',')[1];
+            return JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
+        }
+        // Handle ipfs:// URIs
+        if (tokenURI.startsWith('ipfs://')) {
+            const url = 'https://ipfs.io/ipfs/' + tokenURI.slice(7);
+            // Use sync fetch isn't available in browser — skip for now
+            return { tokenURI };
+        }
+        // Handle direct HTTP URLs
+        if (tokenURI.startsWith('http')) {
+            return { url: tokenURI };
         }
     } catch {}
     return null;
@@ -75,18 +116,22 @@ async function getAgents() {
 
             // tokenURI(uint256)
             const uriRaw = await callContract(IDENTITY_REGISTRY, SELECTORS.tokenURI + encodeUint256(i));
-            const tokenURI = decodeString(uriRaw);
+            const tokenURI = parseTokenURI(uriRaw);
 
             // Fetch metadata
             let name = `Agent #${i}`;
             let description = '';
             let url = '';
+            let services = [];
+            let x402support = false;
             if (tokenURI) {
-                const meta = await fetchMetadata(tokenURI);
+                const meta = decodeMetadata(tokenURI);
                 if (meta) {
                     name = meta.name || name;
                     description = meta.description || '';
-                    url = meta.url || '';
+                    url = meta.url || tokenURI;
+                    services = meta.services || [];
+                    x402support = meta.x402support || false;
                 }
             }
 
@@ -96,7 +141,9 @@ async function getAgents() {
                 tokenURI: tokenURI || '',
                 name,
                 description,
-                url
+                url,
+                services,
+                x402support
             });
         } catch {
             // Skip this ID on error
